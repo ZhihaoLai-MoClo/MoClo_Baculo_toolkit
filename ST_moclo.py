@@ -43,7 +43,7 @@ page = st.sidebar.selectbox("Select Mode", [
     ])
 
 
-uploaded_file = st.file_uploader("📄 Upload CSV (name, type, sequence, no_tag_sequence, parts_used)", type="csv")
+uploaded_file = st.file_uploader("Upload CSV (name, type, sequence, no_tag_sequence, parts_used)", type="csv")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
@@ -257,7 +257,7 @@ if uploaded_file:
 
 
 elif page == "Generate new CDS":
-    st.title("🔗 UniProt Isoform to CCDS Link")
+    st.title("UniProt Isoform to CCDS Link")
     # Input UniProt Isoform ID
     uniprot_id = st.text_input("Enter UniProt Isoform ID (e.g., P68871-1)")
 def get_ccds_link(uniprot_id):
