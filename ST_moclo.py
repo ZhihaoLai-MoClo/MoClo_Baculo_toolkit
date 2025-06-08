@@ -262,9 +262,7 @@ if uploaded_file:
                 st.pyplot(fig)
 
     elif page == "CSV editing and FSTA download":
-        st.title("Edit Sequences & Batch Download FASTA")
-        
-        
+        st.header("Edit Sequences & Batch Download FASTA")
         st.subheader("Edit Sequences")
         edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True)
 
