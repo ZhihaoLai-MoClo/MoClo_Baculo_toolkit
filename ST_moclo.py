@@ -283,7 +283,7 @@ def get_ccds_link(uniprot_id):
             if error:
                 st.error(error)
             else:
-                st.success("✅ CCDS link found!")
+                st.success("CCDS link found!")
                 st.markdown(f"[Open CCDS Entry for {uniprot_id}]({ccds_link})")
 
 
