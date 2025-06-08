@@ -37,8 +37,8 @@ def BsaI_dg(sequence):
 page = st.sidebar.selectbox("Select Mode", [
     "Level 1 Assembly", 
     "Level 2 Assembly", 
-    "Input New Sequence"
-    "Generate new CDS"
+    "Input New Sequence",
+    "Generate new CDS",
     "CSV editing and FSTA download", 
     ])
 
