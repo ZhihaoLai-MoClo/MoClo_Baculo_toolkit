@@ -5,6 +5,8 @@ import matplotlib.patches as mpatches
 from io import StringIO
 import requests
 from xml.etree import ElementTree
+import re
+from rm_site import restriction_sites, amino_acid_to_codon, codon_to_aa, remove_stop_codon, optimize_dna_sequence, count_re_sites, highlight_dna_and_protein
 
 st.set_page_config(page_title="MoClo-YTK Assembly Tool", layout="wide")
 st.title("MoClo Cloning Platform")
@@ -23,7 +25,7 @@ def BsmBI_dg(sequence):
     fwd_index = disequence.find(fwd_site)
     cutfwd = disequence[fwd_index +6:]
     rev_index = cutfwd.find(rev_site)
-    return [cutfwd[:rev_index -5]]
+    return cutfwd[:rev_index -5]
 
 def BsaI_dg(sequence):
     disequence= sequence + sequence
@@ -32,24 +34,89 @@ def BsaI_dg(sequence):
     fwd_index = disequence.find(fwd_site)
     cutfwd = disequence[fwd_index +6:]
     rev_index = cutfwd.find(rev_site)
-    return [cutfwd[:rev_index -5]]
+    return cutfwd[:rev_index -5]
 
 page = st.sidebar.selectbox("Select Mode", [
     "Level 1 Assembly", 
     "Level 2 Assembly", 
-    "Input New Sequence",
     "Generate new CDS",
-    "CSV editing and FSTA download", 
+    "Restriction Site Remover",
+    "Input New Sequence",
+    "CSV editing and FSTA download",
     ])
 
 
-uploaded_file = st.file_uploader("Upload CSV (name, type, sequence, no_tag_sequence, parts_used)", type="csv")
+uploaded_file = st.file_uploader("📄 Upload CSV (name, type, sequence, no_tag_sequence, parts_used)", type="csv")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
     if "parts_used" not in df.columns:
         df["parts_used"] = ""
+
+    if page == "Restriction Site Remover":
+        st.header("Restriction Site Remover for CDS")
+        st.markdown("Enter a coding sequence below. The tool will remove BsaI, BsmBI, and PmeI sites.")
+        dna_input = st.text_area("Input DNA Sequence (ATGC only)", height=200).strip().upper()
+        dna_input = re.sub(r'\s+', '', dna_input.upper())
+
+        if dna_input:
+            site_counts = count_re_sites(dna_input)
+            st.subheader("Restriction Site Count in Original Sequence")
+            for enzyme, count in site_counts.items():
+                st.write(f"🔹 {enzyme}: {count} site(s)")
+        if dna_input[:3] not in ['ATG']:
+            st.text(f"No ATG found")
+        if dna_input[-3:] in ['TAA', 'TAG', 'TGA']:
+            st.text(f"STOP codon not removed!")
+        
+        if st.button("Show restriction sites"):
+            result = highlight_dna_and_protein(dna_input)
+            st.markdown(result, unsafe_allow_html=True)
+        
+        if st.button("Visualise optimised DNA"):
+            if not dna_input or not re.fullmatch(r'[ATGC]+', dna_input):
+                st.error("Please enter a valid DNA sequence containing only A, T, G, C.")
+            else:
+                st.text(f"Original sequence length: {len(dna_input)} bp")
+                dna_cleaned = remove_stop_codon(dna_input)
+                dna_optimized = optimize_dna_sequence(dna_cleaned)
+                st.session_state.dna_optimized = dna_optimized
+                st.success("Optimized DNA Sequence (Restriction sites removed)")
+                st.code(dna_optimized, language="text")
+                st.text(f"Optimized sequence length: {len(dna_optimized)} bp")
+                site_counts = count_re_sites(dna_optimized)
+                st.subheader("Restriction Site Count again")
+                for enzyme, count in site_counts.items():
+                    st.write(f"🔹 {enzyme}: {count} site(s)")
+                optimised_result = highlight_dna_and_protein(dna_optimized)
+                st.markdown(optimised_result, unsafe_allow_html=True)
+        new_name = st.text_input("Part Name")
+        selected_type = st.selectbox("Part Type", ["N-terminal tag", "CDS", "C-terminal tag"])
+        if st.button("Add optimised sequence to CSV file"):
+            dna_cleaned = remove_stop_codon(dna_input)
+            dna_optimized = optimize_dna_sequence(dna_cleaned)
+            if dna_optimized.startswith("ATG"):
+                dna_optimized = dna_optimized[3:]
+                overhangs = {
+                    "N-terminal tag": ("TCGGTCTCAAAGATG", "TCCGGTATGTGAGACC"),
+                    "CDS": ("TCGGTCTCATATG", "GGATCCTGAGACC"),
+                    "C-terminal tag": ("TCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACC"),
+                }
+                left_oh, right_oh = overhangs.get(selected_type, ("", ""))
+                final_seq = left_oh + dna_optimized + right_oh
+                new_row = pd.DataFrame([{
+                    "name": new_name,
+                    "type": selected_type,
+                    "sequence": final_seq,
+                    "no_tag_sequence": "",
+                    "parts_used": ""
+                }])
+            df = pd.concat([df, new_row], ignore_index=True)
+            csv = df.to_csv(index=False)
+            st.success("New part added with overhangs")
+            st.download_button("Download Updated CSV", csv, "updated_parts.csv", "text/csv")
+   
 
     if page == "Level 1 Assembly":
         st.header("Level 1 Assembly")
@@ -97,7 +164,8 @@ if uploaded_file:
             parts_used.append(f"{backbone}({start}-{end})")
             seq_parts.append(seq)
 
-            construct['sequence'] = ''.join(seq_parts)
+            
+            construct['sequence'] = BsmBI_dg(''.join(seq_parts))
             construct['parts_used'] = '|'.join(parts_used)
             construct['type'] = backbone
             construct['no_tag_sequence'] = ""
@@ -136,7 +204,7 @@ if uploaded_file:
                 for pos in pos_cols:
                     if c[pos] != "None":
                         row = df[df["name"] == c[pos]].iloc[0]
-                        seq = BsmBI_dg(row["sequence"])
+                        seq = row["sequence"]
                         seq_parts.append(seq)
                         end = curr_pos + len(seq) - 1
                         parts_with_coords.append(f"{c[pos]}({curr_pos}-{end})")
@@ -147,7 +215,7 @@ if uploaded_file:
                         row = df[df["name"] == helper]
                         if not row.empty:
                             row = row.iloc[0]
-                            seq = BsmBI_dg(row["sequence"])
+                            seq = row["sequence"]
                             seq_parts.append(seq)
                             end = curr_pos + len(seq) - 1
                             parts_with_coords.append(f"{helper}({curr_pos}-{end})")
@@ -159,7 +227,7 @@ if uploaded_file:
                 seq_parts.append(seq)
                 end = curr_pos + len(seq) - 1
                 parts_with_coords.append(f"{lv2bb['name']}({curr_pos}-{end})")
-
+                
                 full_seq = ''.join(seq_parts)
                 part_list = "|".join(parts_with_coords)
                 output.append({"name": c["Construct Name"] or f"Lv2_Construct_{constructs.index(c)+1}", "type": c["Lv2BB"], "sequence": full_seq, "no_tag_sequence": "", "parts_used": part_list})
@@ -219,11 +287,11 @@ if uploaded_file:
         new_seq = st.text_area("DNA Sequence (no stop codon)")
         selected_type = st.selectbox("Part Type", ["Promoter", "N-terminal tag", "CDS", "C-terminal tag", "Terminator"])
 
-        if st.button("Add Overhangs and lv0 Backbone"):
+        if st.button("Add Overhangs"):
             overhangs = {
                 "Promoter": ("TCGGTCTCAAACG", "GGAAGATGAGACC"),
                 "N-terminal tag": ("TCGGTCTCAAAGATG", "TCCGGTATGTGAGACC"),
-                "CDS": ("TCGGTCTCAT", "GGATCCTGAGACC"),
+                "CDS": ("TCGGTCTCATATG", "GGATCCTGAGACC"),
                 "C-terminal tag": ("TCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACC"),
                 "Terminator": ("TCGGTCTCATGGCTAATGA", "GGGCTGTGAGACC")
             }
@@ -234,7 +302,9 @@ if uploaded_file:
 
             left_oh, right_oh = overhangs.get(selected_type, ("", ""))
             if new_seq.endswith("TAA") or new_seq.endswith("TAG") or new_seq.endswith("TGA"):
-                    new_seq = new_seq[:-3]  # remove stop codon
+                new_seq = new_seq[:-3]  # remove stop codon
+            if new_seq.startswith("ATG"):
+                new_seq = new_seq[3:]
             final_seq = left_oh + new_seq + right_oh
 
             if selected_type in ["Promoter", "Terminator"]:
@@ -247,19 +317,13 @@ if uploaded_file:
                     "type": selected_type,
                     "sequence": final_seq,
                     "no_tag_sequence": final_notag_seq,
-                    "parts_used": parts_used
+                    "parts_used": ""
                 }])
             df = pd.concat([df, new_row], ignore_index=True)
             csv = df.to_csv(index=False)
-            st.success("New part added with overhangs and backbone!")
+            st.success("New part added with overhangs")
             st.download_button("Download Updated CSV", csv, "updated_parts.csv", "text/csv")
 
-
-
-elif page == "Generate new CDS":
-    st.title("UniProt Isoform to CCDS Link")
-    # Input UniProt Isoform ID
-    uniprot_id = st.text_input("Enter UniProt Isoform ID (e.g., P68871-1)")
 def get_ccds_link(uniprot_id):
     base_id = uniprot_id.split('-')[0]
     url = f"https://rest.uniprot.org/uniprotkb/{base_id}.json"
@@ -274,10 +338,14 @@ def get_ccds_link(uniprot_id):
             ccds_id = xref["id"]
             link = f"https://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA={ccds_id}"
             return link, None
-        else:
-            return None, "No CCDS entry found in UniProt cross-references."
 
-    if uniprot_id:
+    return None, "No CCDS entry found in UniProt cross-references."
+
+if page == "Generate new CDS":
+    st.title("🔗 UniProt Isoform to CCDS Link")
+    uniprot_id = st.text_input("Enter UniProt Isoform ID (e.g., P68871-1)")
+
+    if st.button("Find DNA and protein sequence"):
         with st.spinner("Fetching CCDS link..."):
             ccds_link, error = get_ccds_link(uniprot_id)
             if error:
@@ -287,5 +355,4 @@ def get_ccds_link(uniprot_id):
                 st.markdown(f"[Open CCDS Entry for {uniprot_id}]({ccds_link})")
 
 
-
-
+    
