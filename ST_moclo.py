@@ -97,7 +97,7 @@ if uploaded_file:
             dna_cleaned = remove_stop_codon(dna_input)
             dna_optimized = optimize_dna_sequence(dna_cleaned)
             if dna_optimized.startswith("ATG"):
-                dna_optimized = dna_optimized[3:]
+                dna_optimized = dna_optimized[-3:]
                 overhangs = {
                     "N-terminal tag": ("TCGGTCTCAAAGATG", "TCCGGTATGTGAGACC"),
                     "CDS": ("TCGGTCTCATATG", "GGATCCTGAGACC"),
