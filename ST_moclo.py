@@ -112,10 +112,10 @@ if uploaded_file:
                     "no_tag_sequence": "",
                     "parts_used": ""
                 }])
-            df = pd.concat([df, new_row], ignore_index=True)
-            csv = df.to_csv(index=False)
-            st.success("New part added with overhangs")
-            st.download_button("Download Updated CSV", csv, "updated_parts.csv", "text/csv")
+                df = pd.concat([df, new_row], ignore_index=True)
+                csv = df.to_csv(index=False)
+                st.success("New part added with overhangs")
+                st.download_button("Download Updated CSV", csv, "updated_parts.csv", "text/csv")
    
 
     if page == "Level 1 Assembly":
