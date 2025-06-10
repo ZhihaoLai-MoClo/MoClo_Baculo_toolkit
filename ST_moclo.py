@@ -6,7 +6,7 @@ from io import StringIO
 import requests
 from xml.etree import ElementTree
 import re
-from rm_site import restriction_sites, amino_acid_to_codon, codon_to_aa, remove_stop_codon, optimize_dna_sequence, count_re_sites, highlight_dna_and_protein
+from rm_site import restriction_sites, amino_acid_to_codon, codon_to_aa, DNA_to_aa, remove_stop_codon, optimize_dna_sequence, count_re_sites, highlight_dna_and_protein
 
 st.set_page_config(page_title="MoClo-YTK Assembly Tool", layout="wide")
 st.title("MoClo Cloning Platform")
@@ -65,10 +65,9 @@ if uploaded_file:
             st.subheader("Restriction Site Count in Original Sequence")
             for enzyme, count in site_counts.items():
                 st.write(f"🔹 {enzyme}: {count} site(s)")
+        
         if dna_input[:3] not in ['ATG']:
-            st.text(f"No ATG found")
-        if dna_input[-3:] in ['TAA', 'TAG', 'TGA']:
-            st.text(f"STOP codon not removed!")
+            st.text(f"No ATG found!")
         
         if st.button("Show restriction sites"):
             result = highlight_dna_and_protein(dna_input)
@@ -262,7 +261,9 @@ if uploaded_file:
                 st.pyplot(fig)
 
     elif page == "CSV editing and FSTA download":
-        st.header("Edit Sequences & Batch Download FASTA")
+        st.title("Edit Sequences & Batch Download FASTA")
+        
+        
         st.subheader("Edit Sequences")
         edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True)
 
