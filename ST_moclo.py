@@ -90,7 +90,7 @@ if page == "Generate level 0 parts":
         Subpage = st.sidebar.selectbox("Select sequence type", [
         "Coding (ORFs, Tags)",  "Non-coding (Promoters, Terminators)",
     ])
-        if Subpage == "Coding":
+        if Subpage == "Coding (ORFs, Tags)":
             st.header("UniProt isoform to CCDS link")
             uniprot_id = st.text_input("Enter UniProt ISOFORM ID (e.g., Q92833-1 not Q92833)")
 
@@ -172,7 +172,7 @@ if page == "Generate level 0 parts":
                 st.success("New part added with overhangs")
                 st.download_button("Download updated CSV of Level 0 parts", csv, "updated_parts.csv", "text/csv")
         
-        elif Subpage == "Non-coding":
+        elif Subpage == "Non-coding (Promoters, Terminators)":
             st.header("Add new sequence")
             new_name = st.text_input("Part Name")
             new_seq = st.text_area("DNA sequence")
