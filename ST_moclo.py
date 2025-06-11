@@ -53,7 +53,7 @@ def BsmBI_dg(sequence):
     fwd_site = "CGTCTC"
     rev_site = "GAGACG"
     fwd_index = disequence.find(fwd_site)
-    cutfwd = disequence[fwd_index +6:]
+    cutfwd = disequence[fwd_index +7:]
     rev_index = cutfwd.find(rev_site)
     return cutfwd[:rev_index -5]
 
@@ -62,7 +62,7 @@ def BsaI_dg(sequence):
     fwd_site = "GGTCTC"
     rev_site = "GAGACC"
     fwd_index = disequence.find(fwd_site)
-    cutfwd = disequence[fwd_index +6:]
+    cutfwd = disequence[fwd_index +7:]
     rev_index = cutfwd.find(rev_site)
     return cutfwd[:rev_index -5]
 
