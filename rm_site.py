@@ -1,4 +1,5 @@
 import re
+import requests
 
 restriction_sites = {
     "BsmBI": ["CGTCTC", "GAGACG"],
@@ -37,21 +38,34 @@ codon_to_aa = {codon: aa for aa, codons in amino_acid_to_codon.items() for codon
 def reverse_complement(seq):
     return seq.translate(str.maketrans("ATCG", "TAGC"))[::-1]
 
-def remove_stop_codon(dna):
-    if dna[-3:] in ['TAA', 'TAG', 'TGA']:
-        return dna[:-3]
+def rm_stop_codon(dna):
+    while len(dna) >= 3: 
+        if dna[-3:] in ['TAA', 'TAG', 'TGA']:
+            dna = dna[:-3]  
+        else:
+            break  
     return dna
 
-def DNA_to_aa(dna_seq):
-    
-    protein_seq = ''
-    for i in range(1, len(dna_seq), 3):
+def rm_start_codon(dna):
+    if dna[:3] in ['ATG']:
+        return dna[3:]
+    return dna
+
+def translate_and_find_stops(dna_seq):
+    dna_seq = re.sub(r'\s+', '', dna_seq.upper())  # Clean up input
+    protein_seq = ""
+    stop_positions = []
+
+    for i in range(0, len(dna_seq) - 2, 3):
         codon = dna_seq[i:i+3]
-        aa = codon_to_aa.get(codon, 'X')  
+        aa = codon_to_aa.get(codon, 'X')  # 'X' for unknown
         protein_seq += aa
-        if aa == '*':  
-            break
-    return protein_seq
+        if aa == '*':
+            codon_index = i // 3
+            stop_positions.append(codon_index)
+
+    return protein_seq, stop_positions
+
 
 def optimize_dna_sequence(dna_seq):
     max_attempts = 100
@@ -152,3 +166,20 @@ def highlight_dna_and_protein(dna_seq, width=81):
         )
 
     return html_output
+
+def get_ccds_link(uniprot_id):
+    base_id = uniprot_id.split('-')[0]
+    url = f"https://rest.uniprot.org/uniprotkb/{base_id}.json"
+    res = requests.get(url)
+
+    if res.status_code != 200:
+        return None, f"Failed to retrieve UniProt entry for {base_id}."
+
+    data = res.json()
+    for xref in data.get("uniProtKBCrossReferences", []):
+        if xref["database"] == "CCDS":
+            ccds_id = xref["id"]
+            link = f"https://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA={ccds_id}"
+            return link, None
+
+    return None, "No CCDS entry found in UniProt cross-references."
