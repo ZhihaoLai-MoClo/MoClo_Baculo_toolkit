@@ -260,7 +260,7 @@ if page == "Level 1 Assembly":
             sel_CDS = cols[2].selectbox(f"CDS [{i+1}]", df[df['type'] == "CDS"]['name'].tolist(), key=f"CDS_{i}")
             sel_C_tag = cols[3].selectbox(f"C-terminal tag [{i+1}]", ["None"] + df[df['type'] == "C-terminal tag"]['name'].tolist(), key=f"Ctag_{i}")
             sel_ter = cols[4].selectbox(f"Terminator [{i+1}]", df[df['type'] == "Terminator"]['name'].tolist(), key=f"Terminator_{i}")
-            sel_BB = cols[5].selectbox(f"Backbone for construct {i+1}", df[df['type'] == 'Backbone']['name'].tolist(), key=f"bb_{i}")
+            sel_BB = cols[5].selectbox(f"Backbone [{i+1}]", df[df['type'] == 'Backbone']['name'].tolist(), key=f"bb_{i}")
 
             for t in types:
                 if t == "Promoter":
