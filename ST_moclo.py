@@ -238,8 +238,7 @@ if page == "Level 1 Assembly":
         st.header("Level 1 Assembly")
         st.sidebar.title (":bulb: Tips! :bulb:")
         st.sidebar.markdown ("This tool will help you contruct many level 1 plasmids all at once. " \
-        "The option to change promoters or terminators has been removed, since there is only one option for each. " \
-        "It will atomatically select the no_tag sequence when no N- or C-terminal tags are added."
+        "It will atomatically select the no_tag sequence for promoter and terminator when no N- or C-terminal tags are added."
         "At the end of this process the level 1 plasmid will be digested by BsmBI and stored in the CSV file to reduce file size.")
         num_constructs = st.number_input("Number of constructs", min_value=1, max_value=10)
         types = ["Promoter", "N-terminal tag", "CDS", "C-terminal tag", "Terminator"]
@@ -254,16 +253,18 @@ if page == "Level 1 Assembly":
             start = 1
             parts_used = []
 
-            cols = st.columns([2, 2, 2, 1])
-
-            sel_N_tag = cols[0].selectbox(f"N-terminal tag [{i+1}]", ["None"] + df[df['type'] == "N-terminal tag"]['name'].tolist(), key=f"Ntag_{i}")
-            sel_CDS = cols[1].selectbox(f"CDS [{i+1}]", df[df['type'] == "CDS"]['name'].tolist(), key=f"CDS_{i}")
-            sel_C_tag = cols[2].selectbox(f"C-terminal tag [{i+1}]", ["None"] + df[df['type'] == "C-terminal tag"]['name'].tolist(), key=f"Ctag_{i}")
-            sel_BB = cols[3].selectbox(f"Backbone for construct {i+1}", df[df['type'] == 'Backbone']['name'].tolist(), key=f"bb_{i}")
+            cols = st.columns([1,2, 2, 2,1,1])
+            
+            sel_pro = cols[0].selectbox(f"Promoter [{i+1}]", df[df['type'] == "Promoter"]['name'].tolist(), key=f"Promoter_{i}")
+            sel_N_tag = cols[1].selectbox(f"N-terminal tag [{i+1}]", ["None"] + df[df['type'] == "N-terminal tag"]['name'].tolist(), key=f"Ntag_{i}")
+            sel_CDS = cols[2].selectbox(f"CDS [{i+1}]", df[df['type'] == "CDS"]['name'].tolist(), key=f"CDS_{i}")
+            sel_C_tag = cols[3].selectbox(f"C-terminal tag [{i+1}]", ["None"] + df[df['type'] == "C-terminal tag"]['name'].tolist(), key=f"Ctag_{i}")
+            sel_ter = cols[4].selectbox(f"Terminator [{i+1}]", df[df['type'] == "Terminator"]['name'].tolist(), key=f"Terminator_{i}")
+            sel_BB = cols[5].selectbox(f"Backbone for construct {i+1}", df[df['type'] == 'Backbone']['name'].tolist(), key=f"bb_{i}")
 
             for t in types:
                 if t == "Promoter":
-                    row = df[df['type'] == "Promoter"].iloc[0]
+                    row = df[df['name'] == sel_pro].iloc[0]
                     if sel_N_tag != "None":
                         seq = BsaI_dg(row['sequence'])
                         name = row['name']
@@ -291,7 +292,7 @@ if page == "Level 1 Assembly":
                     name = sel_C_tag
 
                 elif t == "Terminator":
-                    row = df[df['type'] == "Terminator"].iloc[0]
+                    row = df[df['name'] == sel_ter].iloc[0]
                     if sel_C_tag != "None":
                         seq = BsaI_dg(row['sequence'])
                         name = row['name']
