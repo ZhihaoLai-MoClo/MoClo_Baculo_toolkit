@@ -373,7 +373,7 @@ elif page == "Level 2 Assembly":
                         row = df[df["name"] == helper]
                         if not row.empty:
                             row = row.iloc[0]
-                            seq = row["sequence"]
+                            seq = row[BsmBI_dg("sequence")]
                             seq_parts.append(seq)
                             end = curr_pos + len(seq) - 1
                             parts_with_coords.append(f"{helper}({curr_pos}-{end})")
