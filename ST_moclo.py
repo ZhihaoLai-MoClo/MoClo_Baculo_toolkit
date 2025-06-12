@@ -286,7 +286,7 @@ if page == "Level 1 Assembly":
             parts_used.append(f"{backbone}({start}-{end})")
             seq_parts.append(seq)
 
-            construct['sequence'] = BsmBI_dg(''.join(seq_parts))
+            construct['sequence'] = ''.join(seq_parts)
             construct['parts_used'] = '|'.join(parts_used)
             construct['type'] = backbone
             construct['no_tag_sequence'] = ""
@@ -332,7 +332,7 @@ elif page == "Level 2 Assembly":
                 for pos in pos_cols:
                     if c[pos] != "None":
                         row = df[df["name"] == c[pos]].iloc[0]
-                        seq = row["sequence"]
+                        seq = BsmBI_dg(row["sequence"])
                         seq_parts.append(seq)
                         end = curr_pos + len(seq) - 1
                         parts_with_coords.append(f"{c[pos]}({curr_pos}-{end})")
@@ -421,26 +421,9 @@ elif page == "Tables editor":
         selected_names = st.multiselect("Choose entries to export", edited_df["name"].tolist())
 
         if selected_names:
-            row_000 = df[df["name"] == "pM.000"].iloc[0]
-            seq_000 = BsmBI_dg(row_000['sequence'])
             fasta_output = StringIO()
             for _, row in edited_df[edited_df["name"].isin(selected_names)].iterrows():
-                if any(x in row["type"] for x in ["Promoter", "N-terminal tag", "CDS", "C-terminal tag", "Terminator"]):
-                    out_part = []
-                    out_part.append(BsmBI_dg(row['sequence']))
-                    out_part.append(seq_000)
-                    full_seq = ''.join(out_part)
-                    fasta_output.write(f">{row['name']}\n{full_seq}\n")
-                elif any(x in row["type"] for x in ["pMB.pos1","pMB.pos2","pMB.pos3","pMB.pos4","pMB.pos5","pMB.pos6"]):
-                    out_part = []
-                    out_part.append(row['sequence'])
-                    bb_used = row["type"]
-                    bb_row = df[df["name"] == bb_used].iloc[0]
-                    out_part.append(BsmBI_dg_rev(bb_row["sequence"]))
-                    full_seq = ''.join(out_part)
-                    fasta_output.write(f">{row['name']}\n{out_part}\n")
-                else:
-                    fasta_output.write(f">{row['name']}\n{row['sequence']}\n")
+                fasta_output.write(f">{row['name']}\n{row['sequence']}\n")
 
             st.download_button("Download selected sequences as FASTA", fasta_output.getvalue(), "selected_sequences.fasta", "text/plain")
         csv_output = edited_df.to_csv(index=False)
