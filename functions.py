@@ -8,6 +8,46 @@ restriction_sites = {
     "NotI": ["GCGGCCGC"]
 }
 
+
+overhangs = {
+                    "Promoter": ("GCATCGTCTCATCGGTCTCAAACG", "GGAAGATGAGACCTGAGACGGCAT"),
+                    "N-terminal tag": ("GCATCGTCTCATCGGTCTCAAAGATG", "TCCGGTATGTGAGACCTGAGACGGCAT"),
+                    "CDS": ("GCATCGTCTCATCGGTCTCATATG", "GGATCCTGAGACCTGAGACGGCAT"),
+                    "C-terminal tag": ("GCATCGTCTCATCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACCTGAGACGGCAT"),
+                    "Terminator": ("GCATCGTCTCATCGGTCTCATGGCTAATGA", "GGGCTGTGAGACCTGAGACGGCAT")
+                }
+no_tag_overhangs = {
+                    "Promoter": ("GCATCGTCTCATCGGTCTCAAACG", "TCCGGTATGTGAGACCTGAGACGGCAT"),
+                    "Terminator": ("GCATCGTCTCATCGGTCTCAATCCTAATGA", "GGGCTGTGAGACCTGAGACGGCAT")
+                }
+
+def BsmBI_dg(sequence):
+    disequence= sequence + sequence
+    fwd_site = "CGTCTC"
+    rev_site = "GAGACG"
+    fwd_index = disequence.find(fwd_site)
+    cutfwd = disequence[fwd_index +7:]
+    rev_index = cutfwd.find(rev_site)
+    return [cutfwd[:rev_index -5]]
+
+def BsaI_dg(sequence):
+    disequence= sequence + sequence
+    fwd_site = "GGTCTC"
+    rev_site = "GAGACC"
+    fwd_index = disequence.find(fwd_site)
+    cutfwd = disequence[fwd_index +7:]
+    rev_index = cutfwd.find(rev_site)
+    return [cutfwd[:rev_index -5]]
+
+def BsmBI_dg_rev(sequence):
+    disequence= sequence + sequence
+    fwd_site = "CGTCTC"
+    rev_site = "GAGACG"
+    rev_index = disequence.find(rev_site)
+    cutrev = disequence[rev_index -7:]
+    rev_index = cutrev.find(fwd_site)
+    return [cutrev[:rev_index +5]]
+
 amino_acid_to_codon = {
     'A': ['GCT', 'GCC', 'GCA', 'GCG'],
     'R': ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
@@ -58,7 +98,7 @@ def translate_and_find_stops(dna_seq):
 
     for i in range(0, len(dna_seq) - 2, 3):
         codon = dna_seq[i:i+3]
-        aa = codon_to_aa.get(codon, 'X')  # 'X' for unknown
+        aa = codon_to_aa.get(codon, 'X')
         protein_seq += aa
         if aa == '*':
             codon_index = i // 3
