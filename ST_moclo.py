@@ -10,7 +10,7 @@ from datetime import datetime
 
 #from xml.etree import ElementTree
 import re
-from functions import restriction_sites, amino_acid_to_codon, codon_to_aa, get_ccds_link, translate_and_find_stops, rm_stop_codon,rm_start_codon, optimize_dna_sequence, count_re_sites, highlight_dna_and_protein
+from functions import restriction_sites, amino_acid_to_codon, codon_to_aa, overhangs, no_tag_overhangs, BsaI_dg, BsmBI_dg, BsmBI_dg_rev, get_ccds_link, translate_and_find_stops, rm_stop_codon,rm_start_codon, optimize_dna_sequence, count_re_sites, highlight_dna_and_protein
 
 st.set_page_config(page_title="MoClo-YTK Assembly Tool", layout="wide")
 st.title("MoClo Cloning Platform")
@@ -48,23 +48,6 @@ HELPER_RULES = [
     ("pL3456", ["Pos1", "Pos2"]),
 ]
 
-def BsmBI_dg(sequence):
-    disequence= sequence + sequence
-    fwd_site = "CGTCTC"
-    rev_site = "GAGACG"
-    fwd_index = disequence.find(fwd_site)
-    cutfwd = disequence[fwd_index +7:]
-    rev_index = cutfwd.find(rev_site)
-    return cutfwd[:rev_index -5]
-
-def BsaI_dg(sequence):
-    disequence= sequence + sequence
-    fwd_site = "GGTCTC"
-    rev_site = "GAGACC"
-    fwd_index = disequence.find(fwd_site)
-    cutfwd = disequence[fwd_index +7:]
-    rev_index = cutfwd.find(rev_site)
-    return cutfwd[:rev_index -5]
 
 page = st.sidebar.selectbox("Select function", [
     "Level 1 Assembly", 
@@ -113,7 +96,8 @@ if page == "Generate level 0 parts":
         st.header("Restriction sites remover")
         st.sidebar.subheader ("Restriction sites remover")
         st.sidebar.markdown("Restriction sites remover tool will remove stop codon at the end, BsaI, BsmBI, NotI and PmeI retriction sites by silent mutations." \
-        "At the end of this process, you have an option to add the sequence directly to the CSV file, but only the BsaI sites will be added. Backbone sequences are not added to reduce file size."
+        "At the end of this process, you have an option to add the sequence directly to the CSV file, but only the BsmBI and BsaI sites will be added. " \
+        "Backbone sequences are not added to reduce file size."
         )
         
         dna_input = st.text_area("Input DNA Sequence (ATGC only)", height=200).strip().upper()
@@ -160,11 +144,7 @@ if page == "Generate level 0 parts":
             dna_cleaned = rm_stop_codon(dna_input)
             dna_optimized = optimize_dna_sequence(dna_cleaned)
             dna_optimized = rm_start_codon(dna_optimized)
-            overhangs = {
-                        "N-terminal tag": ("TCGGTCTCAAAGATG", "TCCGGTATGTGAGACC"),
-                        "CDS": ("TCGGTCTCATATG", "GGATCCTGAGACC"),
-                        "C-terminal tag": ("TCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACC"),
-                    }
+
             left_oh, right_oh = overhangs.get(selected_type, ("", ""))
             final_seq = left_oh + dna_optimized + right_oh
             new_row = pd.DataFrame([{
@@ -185,7 +165,7 @@ if page == "Generate level 0 parts":
         st.sidebar.title (":bulb: Tips! :bulb:")
         st.sidebar.markdown("This tool can be used to add parts directly. It will check the restriction site but wont try to remove it. " \
         "For promoter and terminator, it will also add no tag sequence. " \
-        "At the end of this process, you have an option to add the sequence directly to the CSV file, but only the BsaI sites will be added. " \
+        "At the end of this process, you have an option to add the sequence directly to the CSV file, but only the BsmBI and BsaI sites will be added. " \
         "Backbone sequences are not added to reduce file size.")
         new_name = st.text_input("Part Name")
         new_seq = st.text_area("DNA sequence")
@@ -198,17 +178,7 @@ if page == "Generate level 0 parts":
         selected_type = st.selectbox("Part Type", ["Promoter", "N-terminal tag", "CDS", "C-terminal tag", "Terminator"])
 
         if st.button("Add Overhangs"):
-            overhangs = {
-                    "Promoter": ("TCGGTCTCAAACG", "GGAAGATGAGACC"),
-                    "N-terminal tag": ("TCGGTCTCAAAGATG", "TCCGGTATGTGAGACC"),
-                    "CDS": ("TCGGTCTCATATG", "GGATCCTGAGACC"),
-                    "C-terminal tag": ("TCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACC"),
-                    "Terminator": ("TCGGTCTCATGGCTAATGA", "GGGCTGTGAGACC")
-                }
-            no_tag_overhangs = {
-                    "Promoter": ("TCGGTCTCAAACG", "TCCGGTATGTGAGACC"),
-                    "Terminator": ("TCGGTCTCAATCCTAATGA", "GGGCTGTGAGACC")
-                }
+
 
             left_oh, right_oh = overhangs.get(selected_type, ("", ""))
             if selected_type in ["N-terminal tag", "CDS", "C-terminal tag"]:
@@ -438,7 +408,11 @@ elif page == "Tables editor":
         st.sidebar.title (":bulb: Tips! :bulb:")
         st.sidebar.markdown ("This tool allow you to edit the CSV file directly and export selcted parts as FSTA files.")
         st.sidebar.title (":warning: Warning! :warning:")
-        st.sidebar.markdown ("There is no fail safe mechanism build in for this tool. Please be caucious when you edit sequence. Level 0 and level 1 plasmids are stored as digested form to reduce file size. The sequences are incomplete.")
+        st.sidebar.markdown ("There is no fail safe mechanism build in for this tool. " \
+        "Please be caucious when you edit sequence. Level 0 and level 1 plasmids are stored as digested form to reduce file size. " \
+        "The backbone sequences will be added upon FSTA download." \
+        "The plasmids in the demo files are complete plasmid sequecne from our paper." \
+        "The demo plasmid sequences are avalible from addgene. Do no try to download the sequence here! ")
         st.subheader("Edit Sequences")
         edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True)
 
