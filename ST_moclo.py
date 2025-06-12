@@ -447,7 +447,7 @@ elif page == "Tables editor":
         selected_names = st.multiselect("Choose entries to export", edited_df["name"].tolist())
 
         if selected_names:
-            row_000 = df[df["name"] == ["pM.000"]].iloc[0]
+            row_000 = df[df["name"] == "pM.000"].iloc[0]
             seq_000 = BsmBI_dg(row_000['sequence'])
             fasta_output = StringIO()
             for _, row in edited_df[edited_df["name"].isin(selected_names)].iterrows():
