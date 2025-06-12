@@ -28,7 +28,7 @@ def BsmBI_dg(sequence):
     fwd_index = disequence.find(fwd_site)
     cutfwd = disequence[fwd_index +7:]
     rev_index = cutfwd.find(rev_site)
-    return [cutfwd[:rev_index -5]]
+    return cutfwd[:rev_index -5]
 
 def BsaI_dg(sequence):
     disequence= sequence + sequence
@@ -37,7 +37,7 @@ def BsaI_dg(sequence):
     fwd_index = disequence.find(fwd_site)
     cutfwd = disequence[fwd_index +7:]
     rev_index = cutfwd.find(rev_site)
-    return [cutfwd[:rev_index -5]]
+    return cutfwd[:rev_index -5]
 
 def BsmBI_dg_rev(sequence):
     disequence= sequence + sequence
@@ -46,7 +46,8 @@ def BsmBI_dg_rev(sequence):
     rev_index = disequence.find(rev_site)
     cutrev = disequence[rev_index -7:]
     rev_index = cutrev.find(fwd_site)
-    return [cutrev[:rev_index +5]]
+    return cutrev[:rev_index +5]
+
 
 amino_acid_to_codon = {
     'A': ['GCT', 'GCC', 'GCA', 'GCG'],
