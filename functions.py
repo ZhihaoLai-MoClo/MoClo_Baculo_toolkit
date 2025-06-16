@@ -1,25 +1,6 @@
 import re
 import requests
-
-restriction_sites = {
-    "BsmBI": ["CGTCTC", "GAGACG"],
-    "BsaI": ["GGTCTC", "GAGACC"],
-    "PmeI": ["GTTTAAAC"],
-    "NotI": ["GCGGCCGC"]
-}
-
-
-overhangs = {
-                    "Promoter": ("GCATCGTCTCATCGGTCTCAAACG", "GGAAGATGAGACCTGAGACGGCAT"),
-                    "N-terminal tag": ("GCATCGTCTCATCGGTCTCAAAGATG", "TCCGGTATGTGAGACCTGAGACGGCAT"),
-                    "CDS": ("GCATCGTCTCATCGGTCTCATATG", "GGATCCTGAGACCTGAGACGGCAT"),
-                    "C-terminal tag": ("GCATCGTCTCATCGGTCTCAATCCTCAGGT", "TCCGGTGGCTGAGACCTGAGACGGCAT"),
-                    "Terminator": ("GCATCGTCTCATCGGTCTCATGGCTAATGA", "GGGCTGTGAGACCTGAGACGGCAT")
-                }
-no_tag_overhangs = {
-                    "Promoter": ("GCATCGTCTCATCGGTCTCAAACG", "TCCGGTATGTGAGACCTGAGACGGCAT"),
-                    "Terminator": ("GCATCGTCTCATCGGTCTCAATCCTAATGA", "GGGCTGTGAGACCTGAGACGGCAT")
-                }
+from constants import RESTRICTION_SITES,CODON_TO_AA,AA_TO_CODON
 
 def BsmBI_dg(sequence):
     disequence= sequence + sequence
@@ -48,34 +29,6 @@ def BsmBI_dg_rev(sequence):
     rev_index = cutrev.find(fwd_site)
     return cutrev[:rev_index +5]
 
-
-amino_acid_to_codon = {
-    'A': ['GCT', 'GCC', 'GCA', 'GCG'],
-    'R': ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
-    'N': ['AAT', 'AAC'],
-    'D': ['GAT', 'GAC'],
-    'C': ['TGT', 'TGC'],
-    'Q': ['CAA', 'CAG'],
-    'E': ['GAA', 'GAG'],
-    'G': ['GGT', 'GGC', 'GGA', 'GGG'],
-    'H': ['CAT', 'CAC'],
-    'I': ['ATT', 'ATC', 'ATA'],
-    'L': ['CTT', 'TTG', 'TTA', 'CTC', 'CTA', 'CTG'],
-    'K': ['AAA', 'AAG'],
-    'M': ['ATG'],
-    'F': ['TTT', 'TTC'],
-    'P': ['CCT', 'CCC', 'CCA', 'CCG'],
-    'S': ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
-    'T': ['ACT', 'ACC', 'ACA', 'ACG'],
-    'W': ['TGG'],
-    'Y': ['TAT', 'TAC'],
-    'V': ['GTT', 'GTC', 'GTA', 'GTG'],
-    '*': ['TAA', 'TAG', 'TGA'],
-}
-
-
-codon_to_aa = {codon: aa for aa, codons in amino_acid_to_codon.items() for codon in codons}
-
 def reverse_complement(seq):
     return seq.translate(str.maketrans("ATCG", "TAGC"))[::-1]
 
@@ -99,7 +52,7 @@ def translate_and_find_stops(dna_seq):
 
     for i in range(0, len(dna_seq) - 2, 3):
         codon = dna_seq[i:i+3]
-        aa = codon_to_aa.get(codon, 'X')
+        aa = CODON_TO_AA.get(codon, 'X')
         protein_seq += aa
         if aa == '*':
             codon_index = i // 3
@@ -112,16 +65,16 @@ def optimize_dna_sequence(dna_seq):
     max_attempts = 100
     for _ in range(max_attempts):
         modified = False
-        for enzyme, patterns in restriction_sites.items():
+        for enzyme, patterns in RESTRICTION_SITES.items():
             for site in patterns:
                 match = re.search(site, dna_seq)
                 if match:
                     start = match.start()
                     pos = (start // 3) * 3
                     codon = dna_seq[pos:pos+3]
-                    if codon in codon_to_aa:
-                        aa = codon_to_aa[codon]
-                        alternatives = [c for c in amino_acid_to_codon[aa] if c != codon]
+                    if codon in CODON_TO_AA:
+                        aa = CODON_TO_AA[codon]
+                        alternatives = [c for c in AA_TO_CODON[aa] if c != codon]
                         if alternatives:
                             dna_seq = dna_seq[:pos] + alternatives[0] + dna_seq[pos+3:]
                             modified = True
@@ -130,16 +83,16 @@ def optimize_dna_sequence(dna_seq):
             break
     for _ in range(max_attempts):
         modified = False
-        for enzyme, patterns in restriction_sites.items():
+        for enzyme, patterns in RESTRICTION_SITES.items():
             for site in patterns:
                 match = re.search(site, dna_seq)
                 if match:
                     start = match.start()
                     pos = (start // 3) * 3
                     codon = dna_seq[pos+3:pos+6]
-                    if codon in codon_to_aa:
-                        aa = codon_to_aa[codon]
-                        alternatives = [c for c in amino_acid_to_codon[aa] if c != codon]
+                    if codon in CODON_TO_AA:
+                        aa = CODON_TO_AA[codon]
+                        alternatives = [c for c in AA_TO_CODON[aa] if c != codon]
                         if alternatives:
                             dna_seq = dna_seq[:pos+3] + alternatives[0] + dna_seq[pos+6:]
                             modified = True
@@ -154,7 +107,7 @@ def count_re_sites(dna_seq):
     dna_seq = dna_seq.upper()
 
     counts = {}
-    for enzyme, sites in restriction_sites.items():
+    for enzyme, sites in RESTRICTION_SITES.items():
         count = sum(len(re.findall(site, dna_seq)) for site in sites)
         counts[enzyme] = count
     return counts
@@ -163,7 +116,7 @@ def highlight_dna_and_protein(dna_seq, width=81):
     from html import escape
 
     dna_seq = dna_seq.upper().replace("\n", "").replace(" ", "")
-    sites = restriction_sites
+    sites = RESTRICTION_SITES
 
     highlight_pos = set()
     for patterns in sites.values():
@@ -194,7 +147,7 @@ def highlight_dna_and_protein(dna_seq, width=81):
         for j in range(0, len(line) - 2, 3):
             codon = line[j:j + 3]
             idxs = [i + j, i + j + 1, i + j + 2]
-            aa = codon_to_aa.get(codon, "X")
+            aa = CODON_TO_AA.get(codon, "X")
             spacer = "  "  # two spaces between AAs
             if any(x in highlight_pos for x in idxs):
                 highlighted_protein += f"<span style='background-color:orange'>{aa}</span>{spacer}"
