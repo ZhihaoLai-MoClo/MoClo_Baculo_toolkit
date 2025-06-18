@@ -55,6 +55,7 @@ if page == "Main page":
     st.subheader("How does Golden Gate Assembly work")
     st.markdown("There is detailed introduction on [Snapgene](https://www.snapgene.com/guides/golden-gate-assembly)")
     st.subheader("Tutorial video")
+    st.text("If you are only interested in learning how this webtool works, while happy to skip all the general introduction to MoClo Baculo, then skip to minute 24 in the video.")
     st.video("https://youtu.be/g7LITscOQyM")
 
     
