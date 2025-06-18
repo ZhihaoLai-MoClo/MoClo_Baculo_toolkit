@@ -92,7 +92,7 @@ except Exception as e:
 
 if "cached_df" not in st.session_state:
     st.session_state.cached_df = df.copy()
-if st.button("Reset cashe to the uploaded file"): 
+if st.button("Reset cache to the uploaded file"): 
     st.session_state.cached_df = df.copy()
 
 
@@ -169,7 +169,7 @@ elif page == "Generate level 0 parts":
         if new_name in df["name"].values:
             st.warning("Name already exists. Please choose a unique name.")
         elif new_name in set(st.session_state.cached_df["name"].values):
-            st.warning("Name already exists as cashed plasmids")
+            st.warning("Name already exists as cached plasmids")
 
         selected_type = st.selectbox("Part Type", ["N-terminal tag", "CDS", "C-terminal tag"])
         if st.button("Add optimised sequence to CSV file"):
@@ -207,7 +207,7 @@ elif page == "Generate level 0 parts":
         if new_name in df["name"].values:
             st.warning("Name already exists. Please choose a unique name.")
         elif new_name in set(st.session_state.cached_df["name"].values):
-            st.warning("Name already exists as cashed plasmids")
+            st.warning("Name already exists as cached plasmids")
 
         new_seq = st.text_area("DNA sequence")
         if new_seq:
@@ -267,7 +267,7 @@ elif page == "Level 1 Assembly":
             if new_name in df["name"].values:
                 st.warning("Name already exists. Please choose a unique name.")
             elif new_name in set(st.session_state.cached_df["name"].values):
-                st.warning("Name already exists as cashed plasmids")
+                st.warning("Name already exists as cached plasmids")
             construct['name'] = new_name
             part_names = []
             seq_parts = []
@@ -342,13 +342,13 @@ elif page == "Level 1 Assembly":
             construct['no_tag_sequence'] = ""
             constructs.append(construct)
         
-        cashe_lv1 = st.checkbox("Cashe your level 1 plasmids for level 2 assembly.")
+        cache_lv1 = st.checkbox("Cache your level 1 plasmids for level 2 assembly.")
 
         if st.button("Assemble Constructs"):
             new_df = pd.DataFrame(constructs)
             st.dataframe(new_df)
             all_df = pd.concat([df, new_df[df.columns]], ignore_index=True)
-            if cashe_lv1:
+            if cache_lv1:
                 st.session_state.cached_df = pd.concat([st.session_state.cached_df, new_df], ignore_index=True)
                 st.success("Constructs added to cache.")
             csv = all_df.to_csv(index=False)
@@ -360,8 +360,8 @@ elif page == "Level 2 Assembly":
         st.header("Level 2 Assembly")
         st.sidebar.title (":bulb: Tips! :bulb:")
         st.sidebar.markdown ("This tool will help you contruct level 2 plasmids and show linear maps of them. When finding level 1 plasmids you can use the simpified map to check if they are the one you want.")
-        read_cashe = st.checkbox("Read plasmids from cashe for level 2 assembly")
-        if read_cashe:
+        read_cache = st.checkbox("Read plasmids from cache for level 2 assembly")
+        if read_cache:
             df = st.session_state.cached_df
         else:
             df=df
@@ -378,7 +378,7 @@ elif page == "Level 2 Assembly":
             if new_name in df["name"].values:
                 st.warning("Name already exists. Please choose a unique name.")
             elif new_name in set(st.session_state.cached_df["name"].values):
-                st.warning("Name already exists as cashed plasmids")
+                st.warning("Name already exists as cached plasmids")
             c = {"Construct Name": new_name}
             for pos in pos_cols:
                 options = ["None"] + filtered_df[filtered_df["type"].str.contains(pos)]["name"].tolist()
@@ -473,8 +473,8 @@ elif page == "Level 2 Assembly":
 
 elif page == "Tables editor":
         st.title("Edit Sequences & Batch Download FASTA")
-        read_cashe = st.checkbox("show and edit cashed plasmids")
-        if read_cashe:
+        read_cache = st.checkbox("show and edit cached plasmids")
+        if read_cache:
             df = st.session_state.cached_df
         else:
             df=df
